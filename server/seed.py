@@ -1,41 +1,40 @@
-#!/usr/bin/env python3
+from app import app, db
+from models import Restaurant, Pizza, RestaurantPizza
+from faker import Faker
 
-from app import app
-from models import db, Restaurant, Pizza, RestaurantPizza
+fake = Faker()
 
+# Using app context to interact with the database
 with app.app_context():
+    # Ensure tables are created
+    db.create_all()
 
-    # This will delete any existing rows
-    # so you can run the seed file multiple times without having duplicate entries in your database
-    print("Deleting data...")
-    Pizza.query.delete()
-    Restaurant.query.delete()
-    RestaurantPizza.query.delete()
+    # Create sample restaurants
+    r1 = Restaurant(name="Pasta Palace", location="Downtown")
+    r2 = Restaurant(name="Pizza Haven", location="Uptown")
+    r3 = Restaurant(name="Sushi Spot", location="Midtown")
+    r4 = Restaurant(name="Burger King", location="Eastside")
 
-    print("Creating restaurants...")
-    shack = Restaurant(name="Karen's Pizza Shack", address='address1')
-    bistro = Restaurant(name="Sanjay's Pizza", address='address2')
-    palace = Restaurant(name="Kiki's Pizza", address='address3')
-    restaurants = [shack, bistro, palace]
+    # Create sample pizzas with valid price range (1-30)
+    p1 = Pizza(name="Margherita", price=12, ingredients="Tomato, Mozzarella, Basil")
+    p2 = Pizza(name="Pepperoni", price=15, ingredients="Tomato, Mozzarella, Pepperoni")
+    p3 = Pizza(name="Hawaiian", price=18, ingredients="Tomato, Mozzarella, Ham, Pineapple")
+    p4 = Pizza(name="BBQ Chicken", price=22, ingredients="BBQ Sauce, Chicken, Red Onion")
+    p5 = Pizza(name="Vegetarian", price=10, ingredients="Tomato, Mozzarella, Bell Pepper, Olives")
 
-    print("Creating pizzas...")
+    # Add restaurants and pizzas to the session
+    db.session.add_all([r1, r2, r3, r4, p1, p2, p3, p4, p5])
+    db.session.commit()  # Commit after adding the restaurants and pizzas
 
-    cheese = Pizza(name="Emma", ingredients="Dough, Tomato Sauce, Cheese")
-    pepperoni = Pizza(
-        name="Geri", ingredients="Dough, Tomato Sauce, Cheese, Pepperoni")
-    california = Pizza(
-        name="Melanie", ingredients="Dough, Sauce, Ricotta, Red peppers, Mustard")
-    pizzas = [cheese, pepperoni, california]
+    # Associate restaurants with pizzas via RestaurantPizza with price validation (between 1 and 30)
+    rp1 = RestaurantPizza(restaurant_id=r1.id, pizza_id=p1.id, price=12)  # Valid price
+    rp2 = RestaurantPizza(restaurant_id=r2.id, pizza_id=p2.id, price=15)  # Valid price
+    rp3 = RestaurantPizza(restaurant_id=r3.id, pizza_id=p3.id, price=18)  # Valid price
+    rp4 = RestaurantPizza(restaurant_id=r4.id, pizza_id=p4.id, price=22)  # Valid price
+    rp5 = RestaurantPizza(restaurant_id=r1.id, pizza_id=p5.id, price=10)  # Valid price
 
-    print("Creating RestaurantPizza...")
+    # Add the relationships to the session
+    db.session.add_all([rp1, rp2, rp3, rp4, rp5])
+    db.session.commit()  # Final commit to save all changes
 
-    pr1 = RestaurantPizza(restaurant=shack, pizza=cheese, price=1)
-    pr2 = RestaurantPizza(restaurant=bistro, pizza=pepperoni, price=4)
-    pr3 = RestaurantPizza(restaurant=palace, pizza=california, price=5)
-    restaurantPizzas = [pr1, pr2, pr3]
-    db.session.add_all(restaurants)
-    db.session.add_all(pizzas)
-    db.session.add_all(restaurantPizzas)
-    db.session.commit()
-
-    print("Seeding done!")
+    print("Database seeded successfully!")
